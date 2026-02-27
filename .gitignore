@@ -1,0 +1,9 @@
+.env
+__pycache__/
+checkpoints.sqlite
+checkpoints.sqlite-shm
+checkpoints.sqlite-wal
+test_flowchart_url.py
+venv/
+*.pdf
+*.docx

@@ -1,0 +1,30 @@
+# Core LLM Framework
+langchain>=0.2.0
+langgraph>=0.0.40
+langchain-community
+# OpenAI / LLM Provider
+openai>=1.0.0
+
+# Document Loaders
+pypdf>=3.17.0
+python-docx>=1.1.0
+
+# API Framework (Optional if using backend)
+fastapi>=0.110.0
+uvicorn>=0.27.0
+
+# UI
+streamlit>=1.30.0
+
+# Data Validation
+pydantic>=2.6.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Email Integration (for future clarification agent)
+email-validator>=2.1.0
+
+# Utilities
+typing-extensions>=4.9.0
+langgraph-checkpoint-sqlite
