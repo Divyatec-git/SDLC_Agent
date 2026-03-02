@@ -5,6 +5,7 @@ import os
 import uuid
 from dotenv import load_dotenv
 from db.models.requirement_session import get_session_data_aggregated
+from agents.code_generation_agent import code_generation_agent
 load_dotenv()
 
 st.set_page_config(page_title="SDLC Requirement Agent", layout="wide")
@@ -195,4 +196,33 @@ if st.button("Show Session Details"):
                         final_output["flowchart_image_url"],
                         caption="Requirement Flowchart"
                     )
-            print("")
+print("")
+
+tech_stack = st.text_input("Enter Tech Stack")           
+
+if st.button("Generate Code"):
+    if not session_id:
+        st.warning("Please enter a session ID")
+    else:
+        if not tech_stack:
+            st.warning("Please enter a tech stack")
+        
+        session_data = get_session_data_aggregated(session_id)
+        st.spinner("Generating code...")
+        if not session_data:
+            st.error("Session not found")
+        else:
+            st.success("Session Loaded Successfully ✅")
+            final_output = session_data.get("final_output", {})
+            repo_url = final_output.get("repo_url")
+
+            if not repo_url:
+                st.error("Repository URL not found in this session.")
+            else:
+                with st.spinner("Generating code..."):
+                    result = code_generation_agent(
+                        session_data.get("extracted_requirements", "No requirements found"), 
+                        tech_stack, 
+                        repo_url
+                    )
+                st.success(result["email_status"])

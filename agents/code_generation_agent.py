@@ -6,18 +6,22 @@ from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-
+from urllib.parse import urlparse
 load_dotenv()
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_KEY")
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-def code_generation_agent(state):
-    requirements = state["extracted_requirements"]
-    tech_stack = state["selected_tech_stack"]
-    repo_url = state["repo_url"]
+def code_generation_agent(requirements, tech_stack, repo_url):
+    
 
     # Extract owner/repo from URL e.g. https://github.com/user/repo
-    repo_name_full = repo_url.replace("https://github.com/", "")
+    # repo_name_full1 = repo_url.replace("https://github.com/", "")
+    parsed = urlparse(repo_url)
+    parts = parsed.path.strip("/").split("/")
+    if len(parts) < 2:
+        return {"email_status": f"Error: Invalid GitHub repository URL provided: {repo_url}"}
+    repo_name_full = f"{parts[0]}/{parts[1]}"
 
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     headers = {
@@ -26,8 +30,8 @@ def code_generation_agent(state):
     }
 
     prompt = ChatPromptTemplate.from_template("""
-    You are a senior software engineer.
-    Based on the requirements and the selected tech stack, generate core boilerplate code for the project.
+    You are an expert full-stack software architect and UI/UX designer.
+    Your goal is to generate a professional, production-ready, and visually stunning project foundation based on the requirements and tech stack.
 
     Requirements:
     {requirements}
@@ -35,8 +39,22 @@ def code_generation_agent(state):
     Selected Tech Stack:
     {tech_stack}
 
-    Generate files that form the foundation of this project.
+    ### Design Guidelines:
+    - **Aesthetics**: Use a modern, premium design. Incorporate vibrant but harmonious color palettes, subtle gradients, and glassmorphism where appropriate.
+    - **UX**: Ensure the interface is intuitive, responsive, and feels 'alive' with micro-animations and hover effects.
+    - **Typography**: Use modern, clean fonts (e.g., Inter, Roboto).
+    - **Professionalism**: The code must be well-organized, commented, and follow best practices for the chosen tech stack.
 
+    ### Project Requirements:
+    - Generate a complete set of files to make the project functional and ready for further development.
+    - Include:
+        - A comprehensive README.md with setup instructions and project overview.
+        - Dependency management files (e.g., package.json, requirements.txt, go.mod).
+        - Configuration files (e.g., .gitignore, tailwind.config.js if applicable).
+        - A well-structured source directory (e.g., src/, components/, styles/).
+        - At least one polished, fully functional landing page or dashboard reflecting the requirements.
+
+    ### Output Format:
     Format your response EXACTLY as a series of blocks like this:
     ---FILE: path/to/file1---
     [content of file1]
@@ -44,11 +62,10 @@ def code_generation_agent(state):
     [content of file2]
 
     Rules:
-    - Include at least: README.md, package.json or requirements.txt, and 2-3 core source files.
     - Keep file paths relative (no leading slash).
-    - Focus on a well-structured, functional starting point.
+    - No conversational text, only the file blocks.
     """)
-
+    
     response = llm.invoke(prompt.format(requirements=requirements, tech_stack=tech_stack))
     content = response.content
 

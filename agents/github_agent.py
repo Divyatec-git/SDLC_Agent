@@ -94,6 +94,10 @@ def github_agent(state, config):
             "repo_url": repo_url,
             "email_status": f"GitHub Repo Created with Flowchart: {repo_url}"
         }
+    elif response.status_code == 422:
+        return {
+            "email_status": "Repository name already exists. Try another name."
+        }
     else:
         # If repo exists, try a variant or just return error
         return {
