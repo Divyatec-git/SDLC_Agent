@@ -4,6 +4,9 @@ langgraph>=0.0.40
 langchain-community
 # OpenAI / LLM Provider
 openai>=1.0.0
+langchain-openai
+langchain-anthropic
+langchain-google-genai
 
 # Document Loaders
 pypdf>=3.17.0

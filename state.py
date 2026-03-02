@@ -21,3 +21,4 @@ class SDLCState(TypedDict):
     repo_url: str
     mermaid_diagram: str
     flowchart_image_url: str
+    thread_id: str

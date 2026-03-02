@@ -59,7 +59,6 @@ builder.add_conditional_edges(
 # Sequential tasks
 builder.add_edge("create_flowchart", "create_repo")
 builder.add_edge("create_repo", "final_notification")
-
 builder.add_edge("final_notification", END)
 
 # Create a connection and checkpointer
