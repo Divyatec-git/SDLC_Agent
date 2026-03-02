@@ -9,7 +9,7 @@ load_dotenv()
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-def flowchart_agent(state):
+def flowchart_agent(state, config):
     extracted_requirements = state["extracted_requirements"]
 
     prompt = ChatPromptTemplate.from_template("""

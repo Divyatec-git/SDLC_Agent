@@ -4,12 +4,14 @@ from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from db.models.requirement_session import create_session
 load_dotenv()
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-def requirement_extraction_agent(state):
+def requirement_extraction_agent(state, config):
     document = state["raw_document"]
+    thread_id = config.get("configurable", {}).get("thread_id", "default")
 
     prompt = ChatPromptTemplate.from_template("""
     You are a senior business analyst working with non-technical stakeholders.
@@ -57,6 +59,15 @@ def requirement_extraction_agent(state):
     if "Clarification Questions:" in text:
         questions_section = text.split("Clarification Questions:")[1]
         questions = [q.strip("- ").strip() for q in questions_section.split("\n") if q.strip()]
+
+    
+    # Persist to MongoDB
+    create_session(
+        session_id=thread_id,
+        raw_document=document,
+        extracted_requirements=text,
+        stakeholder_emails=state.get("stakeholder_emails", [])
+    )
 
     return {
         "extracted_requirements": text,

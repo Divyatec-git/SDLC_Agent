@@ -11,12 +11,16 @@ from pydantic import BaseModel, Field
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
+from db.models.final_output import create_final_output
+from db.models.requirement_session import get_session
+
 class RepoInfo(BaseModel):
     name: str = Field(description="A slug-style repository name (e.g., 'myapp-backend').")
     description: str = Field(description="A brief description of the repository.")
 
-def github_agent(state):
+def github_agent(state, config):
     extracted_requirements = state["extracted_requirements"]
+    thread_id = config.get("configurable", {}).get("thread_id", "default")
     
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     if not GITHUB_TOKEN:
@@ -76,6 +80,15 @@ def github_agent(state):
             "content": base64.b64encode(readme_content.encode("utf-8")).decode("utf-8")
         }
         requests.put(readme_url, headers=headers, json=readme_payload)
+
+        sessionId = get_session(thread_id)
+        if sessionId:
+            # Persist to MongoDB
+            create_final_output(
+                requirement_session_id=sessionId,
+                flowchart_image_url=flowchart_image_url,
+                repo_url=repo_url
+        )
 
         return {
             "repo_url": repo_url,

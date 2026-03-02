@@ -1,9 +1,11 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from db.models.requirement_session import update_session
 
-def final_notification_agent(state):
+def final_notification_agent(state, config):
     stakeholder_emails = state["stakeholder_emails"]
+    thread_id = config.get("configurable", {}).get("thread_id", "default")
     smtp_config = state["smtp_config"]
     repo_url = state.get("repo_url", "")
     flowchart_image_url = state.get("flowchart_image_url", "")
@@ -53,6 +55,15 @@ def final_notification_agent(state):
         status = "Final Notification Sent"
     except Exception as e:
         status = f"Final Notification Failed: {str(e)}"
+
+    # Update MongoDB session status
+    update_session(
+        session_id=thread_id,
+        email_event={
+            "round": 1,  # 0 or special marker for final notification
+            "status": status
+        }
+    )
 
     return {
         "email_status": status

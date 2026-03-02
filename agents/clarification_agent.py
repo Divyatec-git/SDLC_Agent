@@ -4,6 +4,10 @@ from email.mime.text import MIMEText
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from db.models.requirement_session import update_session, get_session , create_session
+from db.models.requirement_version import create_version
 load_dotenv()
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
@@ -68,6 +72,25 @@ def clarification_agent(state, config):
 
     except Exception as e:
         email_status = f"Email Failed: {str(e)}"
+
+
+    sessionId = get_session(thread_id)
+
+    if sessionId:
+        
+        # Update MongoDB
+        round_num = create_version(
+            requirement_sessions_id=sessionId,
+            clarification_questions=clarification_questions
+        )
+        
+        update_session(
+            session_id=sessionId,
+            email_event={
+                "round": round_num,
+                "status": email_status
+            }
+        )
 
     # Step 3: Update State
     return {

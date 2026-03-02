@@ -8,6 +8,9 @@ from typing import List, TypedDict
 
 load_dotenv()
 
+from db.models.requirement_session import update_session , get_session
+from db.models.requirement_version import update_version_response
+
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 from pydantic import BaseModel, Field
@@ -17,10 +20,11 @@ class AnalysisOutput(BaseModel):
     remaining_questions: List[str] = Field(description="List of questions that still need answering.")
     summary: str = Field(description="Summary of the clarification received.")
 
-def analyzer_agent(state):
+def analyzer_agent(state, config):
     extracted_requirements = state["extracted_requirements"]
     clarification_questions = state["clarification_questions"]
     stakeholder_response = state["stakeholder_response"]
+    thread_id = config.get("configurable", {}).get("thread_id", "default")
 
     structured_llm = llm.with_structured_output(AnalysisOutput)
 
@@ -77,6 +81,20 @@ def analyzer_agent(state):
         updated_requirements = merge_response.content
     else:
         updated_requirements = extracted_requirements
+
+    sessionId = get_session(thread_id)
+    if sessionId:
+        # Update MongoDB
+        update_version_response(
+            requirement_sessions_id=sessionId,
+            stakeholder_response=stakeholder_response,
+            needs_more_clarification=not result.is_clarified
+        )
+        
+        update_session(
+            session_id=thread_id,
+            extracted_requirements=updated_requirements
+        )
 
     return {
         "is_clarified": result.is_clarified,

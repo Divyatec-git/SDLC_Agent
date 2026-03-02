@@ -4,7 +4,7 @@ from utils.document_loader import load_document
 import os
 import uuid
 from dotenv import load_dotenv
-
+from db.models.requirement_session import get_session_data_aggregated
 load_dotenv()
 
 st.set_page_config(page_title="SDLC Requirement Agent", layout="wide")
@@ -139,3 +139,60 @@ else:
             st.success(f"**[GitHub Repository]({state_values.get('repo_url')})**")
             if state_values.get("flowchart_image_url"):
                 st.image(state_values["flowchart_image_url"], caption="Requirement Flowchart")
+
+# Example input field
+session_id = st.text_input("Enter Session ID")           
+# Button
+if st.button("Show Session Details"):
+    if not session_id:
+        st.warning("Please enter a session ID")
+    else:
+        session_data = get_session_data_aggregated(session_id)
+        if not session_data:
+            st.error("Session not found")
+        else:
+            st.success("Session Loaded Successfully ✅")
+
+            # ----------------------------
+            # Show Extracted Requirements
+            # ----------------------------
+            st.subheader("Extracted Requirements")
+            st.write(session_data.get("extracted_requirements", "No requirements found"))
+
+            # ----------------------------
+            # Show Clarification Versions
+            # ----------------------------
+            versions = session_data.get("requirement_versions", [])
+
+            if versions:
+                st.subheader("Clarification Versions")
+
+                for v in versions:
+                    with st.expander(f"Version {v.get('version', 'N/A')}"):
+                        st.write("Questions:")
+                        st.write(v.get("clarification_questions", ""))
+
+                        st.write("User Response:")
+                        st.write(v.get("stakeholder_response", "Not submitted"))
+
+                        st.write("Needs More Clarification:",
+                                            v.get("needs_more_clarification", False))
+
+            # ----------------------------
+            # Show Final Output
+            # ----------------------------
+            final_output = session_data.get("final_output")
+
+            if final_output and final_output.get("repo_url"):
+                st.subheader("Final Output")
+
+                st.success(
+                    f"**[GitHub Repository]({final_output.get('repo_url')})**"
+                )
+
+                if final_output.get("flowchart_image_url"):
+                    st.image(
+                        final_output["flowchart_image_url"],
+                        caption="Requirement Flowchart"
+                    )
+            print("")
