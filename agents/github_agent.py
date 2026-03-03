@@ -13,6 +13,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 from db.models.final_output import create_final_output
 from db.models.requirement_session import get_session
+from db.models.user_story import create_user_stories
 
 class RepoInfo(BaseModel):
     name: str = Field(description="A slug-style repository name (e.g., 'myapp-backend').")
@@ -88,7 +89,14 @@ def github_agent(state, config):
                 requirement_session_id=sessionId,
                 flowchart_image_url=flowchart_image_url,
                 repo_url=repo_url
+                
         )
+
+            if state["user_stories"]:
+                create_user_stories(
+                    requirement_session_id=sessionId,
+                    stories=state["user_stories"]
+                )
 
         return {
             "repo_url": repo_url,

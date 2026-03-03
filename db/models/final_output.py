@@ -7,6 +7,7 @@ Schema:
     "requirement_session_id": ObjectId,   # FK → requirement_sessions.session_id
     "flowchart_image_url": str,
     "repo_url": str,
+    
     "created_at": datetime
 }
 """
@@ -23,6 +24,7 @@ def create_final_output(
     requirement_session_id: str,
     flowchart_image_url: str,
     repo_url: str,
+   
 ) -> None:
     """Insert a final output document for the given session."""
 
@@ -33,6 +35,7 @@ def create_final_output(
         "requirement_sessions_id": requirement_session_obj_id,
         "flowchart_image_url": flowchart_image_url,
         "repo_url": repo_url,
+       
         "created_at": datetime.utcnow(),
     }
     _collection().insert_one(doc)

@@ -121,6 +121,14 @@ def get_session_data_aggregated(session_id: str):
             }
         },
         {
+            "$lookup": {
+                "from": "user_stories",
+                "localField": "_id",
+                "foreignField": "requirement_sessions_id",
+                "as": "user_stories"
+            }
+        },
+        {
             "$project": {
                 "_id": 0,
                 "session_id": 1,
@@ -129,7 +137,8 @@ def get_session_data_aggregated(session_id: str):
                 "stakeholder_emails": 1,
                 "email_status": 1,
                 "requirement_versions": 1,
-                "final_output": {"$arrayElemAt": ["$final_output", 0]}
+                "final_output": {"$arrayElemAt": ["$final_output", 0]},
+                "user_stories": 1
             }
         }
     ]

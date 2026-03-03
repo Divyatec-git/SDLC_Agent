@@ -22,3 +22,4 @@ class SDLCState(TypedDict):
     mermaid_diagram: str
     flowchart_image_url: str
     thread_id: str
+    user_stories: dict

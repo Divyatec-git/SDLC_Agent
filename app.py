@@ -99,22 +99,35 @@ if view == "sessions":
                                                 v.get("needs_more_clarification", False))
 
                 # ----------------------------
-                # Show Final Output
+                # Show Final Output & User Stories
                 # ----------------------------
                 final_output = session_data.get("final_output")
+                user_stories = session_data.get("user_stories", [])
 
                 if final_output and final_output.get("repo_url"):
-                    st.subheader("Final Output")
-
-                    st.success(
-                        f"**[GitHub Repository]({final_output.get('repo_url')})**"
-                    )
-
-                    if final_output.get("flowchart_image_url"):
-                        st.image(
-                            final_output["flowchart_image_url"],
-                            caption="Requirement Flowchart"
-                        )
+                    st.divider()
+                    st.header("🚀 Final Project Assets")
+                    
+                    col1, col2 = st.columns([1, 2])
+                    with col1:
+                        st.success(f"### [📦 GitHub Repository]({final_output.get('repo_url')})")
+                        if final_output.get("flowchart_image_url"):
+                            st.image(final_output["flowchart_image_url"], caption="System Flowchart")
+                    
+                    with col2:
+                        if user_stories:
+                            st.subheader("📝 User Stories")
+                            for item in user_stories:
+                                story = item.get("story", {})  # 👈 IMPORTANT
+                                with st.expander(f"{story.get('id', 'US')}: {story.get('title', 'User Story')}"):
+                                    st.write(f"**Actor:** {story.get('actor', 'N/A')}")
+                                    st.write(f"**Description:** {story.get('description', 'N/A')}")
+                                    if story.get("acceptance_criteria"):
+                                        st.write("**Acceptance Criteria:**")
+                                        for criteria in story.get("acceptance_criteria"):
+                                            st.write(f"- {criteria}")
+                                    if story.get("dependencies"):
+                                        st.write(f"**Dependencies:** {', '.join(story.get('dependencies'))}")
 
             
 
@@ -267,8 +280,20 @@ else:
     elif state_values and state_values.get("repo_url"):
         with col2:
             st.header("Results")
-            st.write(state_values.get("extracted_requirements", ""))
-            st.success(f"**[GitHub Repository]({state_values.get('repo_url')})**")
+            if state_values.get("repo_url"):
+                st.success(f"### [📦 GitHub Repository]({state_values.get('repo_url')})")
             if state_values.get("flowchart_image_url"):
-                st.image(state_values["flowchart_image_url"], caption="Requirement Flowchart")
-
+                st.image(state_values["flowchart_image_url"], caption="System Flowchart")
+            
+            # Show User Stories if available in state
+            user_stories = state_values.get("flow_structure_json", [])
+            if user_stories:
+                st.subheader("📝 User Stories")
+                for story in user_stories:
+                    with st.expander(f"{story.get('id', 'US')}: {story.get('title', 'User Story')}"):
+                        st.write(f"**Actor:** {story.get('actor', 'N/A')}")
+                        st.write(f"**Description:** {story.get('description', 'N/A')}")
+                        if story.get("acceptance_criteria"):
+                            st.write("**Acceptance Criteria:**")
+                            for criteria in story.get("acceptance_criteria"):
+                                st.write(f"- {criteria}")
