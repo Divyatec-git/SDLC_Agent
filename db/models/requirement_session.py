@@ -137,3 +137,9 @@ def get_session_data_aggregated(session_id: str):
     result = list(_collection().aggregate(pipeline))
     
     return result[0] if result else None
+
+
+def get_all_sessions():
+    """Retrieve all session documents, sorted by created_at descending."""
+    cursor = _collection().find({}).sort("created_at", -1)
+    return list(cursor)

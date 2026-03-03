@@ -4,21 +4,152 @@ from utils.document_loader import load_document
 import os
 import uuid
 from dotenv import load_dotenv
-from db.models.requirement_session import get_session_data_aggregated
+from db.models.requirement_session import get_session_data_aggregated, get_all_sessions
 from agents.code_generation_agent import code_generation_agent
 load_dotenv()
 
 st.set_page_config(page_title="SDLC Requirement Agent", layout="wide")
 st.title("SDLC Requirement Extraction & Clarification Agent")
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Sidebar Navigation
+# ─────────────────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.title("Navigation")
+    if st.button("New Session"):
+        st.query_params.clear()
+        st.query_params["view"] = "main"
+        st.rerun()
+    
+    if st.button("All Sessions"):
+        st.query_params.clear()
+        st.query_params["view"] = "sessions"
+        st.rerun()
+
 # Main UI
 view = st.query_params.get("view", "main")
 thread_id = st.query_params.get("thread_id", str(uuid.uuid4()))
 
 # ─────────────────────────────────────────────────────────────────────────────
+# VIEW: Sessions List Page
+# ─────────────────────────────────────────────────────────────────────────────
+if view == "sessions":
+    st.header("All Requirement Sessions")
+    sessions = get_all_sessions()
+    
+    if not sessions:
+        st.info("No sessions found.")
+    else:
+        # Prepare data for the table
+        table_data = []
+        for s in sessions:
+            table_data.append({
+                "Session ID": s.get("session_id"),
+                "Created At": s.get("created_at").strftime("%Y-%m-%d %H:%M:%S") if s.get("created_at") else "N/A",
+                "Stakeholders": ", ".join(s.get("stakeholder_emails", [])),
+                "Status": s.get("email_status")[-1].get("status") if s.get("email_status") else "Initial"
+            })
+        
+        st.table(table_data)
+        
+        st.divider()
+        st.subheader("Load Session Details")
+        selected_session = st.selectbox("Select Session ID to view details", [s["Session ID"] for s in table_data])
+        if st.button("View Details"):
+            st.query_params["view"] = "main"
+            st.query_params["thread_id"] = selected_session
+            st.rerun()
+    # Example input field
+    session_id = st.text_input("Enter Session ID")  
+    tech_stack = st.text_input("Enter Tech Stack")           
+    # Button
+    if st.button("Show Session Details"):
+        if not session_id:
+            st.warning("Please enter a session ID")
+        else:
+            session_data = get_session_data_aggregated(session_id)
+            if not session_data:
+                st.error("Session not found")
+            else:
+                st.success("Session Loaded Successfully ✅")
+
+                # ----------------------------
+                # Show Extracted Requirements
+                # ----------------------------
+                st.subheader("Extracted Requirements")
+                st.write(session_data.get("extracted_requirements", "No requirements found"))
+
+                # ----------------------------
+                # Show Clarification Versions
+                # ----------------------------
+                versions = session_data.get("requirement_versions", [])
+
+                if versions:
+                    st.subheader("Clarification Versions")
+
+                    for v in versions:
+                        with st.expander(f"Version {v.get('version', 'N/A')}"):
+                            st.write("Questions:")
+                            st.write(v.get("clarification_questions", ""))
+
+                            st.write("User Response:")
+                            st.write(v.get("stakeholder_response", "Not submitted"))
+
+                            st.write("Needs More Clarification:",
+                                                v.get("needs_more_clarification", False))
+
+                # ----------------------------
+                # Show Final Output
+                # ----------------------------
+                final_output = session_data.get("final_output")
+
+                if final_output and final_output.get("repo_url"):
+                    st.subheader("Final Output")
+
+                    st.success(
+                        f"**[GitHub Repository]({final_output.get('repo_url')})**"
+                    )
+
+                    if final_output.get("flowchart_image_url"):
+                        st.image(
+                            final_output["flowchart_image_url"],
+                            caption="Requirement Flowchart"
+                        )
+
+            
+
+    if st.button("Generate Code"):
+        if not session_id:
+            st.warning("Please enter a session ID")
+        else:
+            if not tech_stack:
+                st.warning("Please enter a tech stack")
+            
+            session_data = get_session_data_aggregated(session_id)
+            st.spinner("Generating code...")
+            if not session_data:
+                st.error("Session not found")
+            else:
+                st.success("Session Loaded Successfully ✅")
+                final_output = session_data.get("final_output", {})
+                repo_url = final_output.get("repo_url")
+
+                if not repo_url:
+                    st.error("Repository URL not found in this session.")
+                else:
+                    with st.spinner("Generating code..."):
+                        result = code_generation_agent(
+                            session_data.get("extracted_requirements", "No requirements found"), 
+                            tech_stack, 
+                            repo_url
+                        )
+                    st.success(result["email_status"])
+    print("")
+
+# ─────────────────────────────────────────────────────────────────────────────
 # VIEW: Stakeholder Response Page
 # ─────────────────────────────────────────────────────────────────────────────
-if view == "respond":
+elif view == "respond":
     st.header("Stakeholder Clarification Response")
     config = {"configurable": {"thread_id": thread_id}}
     existing_state = graph.get_state(config)
@@ -141,88 +272,3 @@ else:
             if state_values.get("flowchart_image_url"):
                 st.image(state_values["flowchart_image_url"], caption="Requirement Flowchart")
 
-# Example input field
-session_id = st.text_input("Enter Session ID")           
-# Button
-if st.button("Show Session Details"):
-    if not session_id:
-        st.warning("Please enter a session ID")
-    else:
-        session_data = get_session_data_aggregated(session_id)
-        if not session_data:
-            st.error("Session not found")
-        else:
-            st.success("Session Loaded Successfully ✅")
-
-            # ----------------------------
-            # Show Extracted Requirements
-            # ----------------------------
-            st.subheader("Extracted Requirements")
-            st.write(session_data.get("extracted_requirements", "No requirements found"))
-
-            # ----------------------------
-            # Show Clarification Versions
-            # ----------------------------
-            versions = session_data.get("requirement_versions", [])
-
-            if versions:
-                st.subheader("Clarification Versions")
-
-                for v in versions:
-                    with st.expander(f"Version {v.get('version', 'N/A')}"):
-                        st.write("Questions:")
-                        st.write(v.get("clarification_questions", ""))
-
-                        st.write("User Response:")
-                        st.write(v.get("stakeholder_response", "Not submitted"))
-
-                        st.write("Needs More Clarification:",
-                                            v.get("needs_more_clarification", False))
-
-            # ----------------------------
-            # Show Final Output
-            # ----------------------------
-            final_output = session_data.get("final_output")
-
-            if final_output and final_output.get("repo_url"):
-                st.subheader("Final Output")
-
-                st.success(
-                    f"**[GitHub Repository]({final_output.get('repo_url')})**"
-                )
-
-                if final_output.get("flowchart_image_url"):
-                    st.image(
-                        final_output["flowchart_image_url"],
-                        caption="Requirement Flowchart"
-                    )
-print("")
-
-tech_stack = st.text_input("Enter Tech Stack")           
-
-if st.button("Generate Code"):
-    if not session_id:
-        st.warning("Please enter a session ID")
-    else:
-        if not tech_stack:
-            st.warning("Please enter a tech stack")
-        
-        session_data = get_session_data_aggregated(session_id)
-        st.spinner("Generating code...")
-        if not session_data:
-            st.error("Session not found")
-        else:
-            st.success("Session Loaded Successfully ✅")
-            final_output = session_data.get("final_output", {})
-            repo_url = final_output.get("repo_url")
-
-            if not repo_url:
-                st.error("Repository URL not found in this session.")
-            else:
-                with st.spinner("Generating code..."):
-                    result = code_generation_agent(
-                        session_data.get("extracted_requirements", "No requirements found"), 
-                        tech_stack, 
-                        repo_url
-                    )
-                st.success(result["email_status"])
