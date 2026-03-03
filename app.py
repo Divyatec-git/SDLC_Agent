@@ -111,6 +111,8 @@ if view == "sessions":
                     col1, col2 = st.columns([1, 2])
                     with col1:
                         st.success(f"### [📦 GitHub Repository]({final_output.get('repo_url')})")
+                        if final_output.get("jira_status"):
+                            st.success(f"### [📦 Jira Project]({final_output.get('jira_url')})")
                         if final_output.get("flowchart_image_url"):
                             st.image(final_output["flowchart_image_url"], caption="System Flowchart")
                     
@@ -157,7 +159,7 @@ if view == "sessions":
                             repo_url
                         )
                     st.success(result["email_status"])
-    print("")
+    
 
 # ─────────────────────────────────────────────────────────────────────────────
 # VIEW: Stakeholder Response Page

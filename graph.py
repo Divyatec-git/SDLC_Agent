@@ -10,7 +10,7 @@ from agents.github_agent import github_agent
 from agents.analyzer_agent import analyzer_agent
 from agents.flowchart_agent import flowchart_agent
 from agents.final_notification_agent import final_notification_agent
-
+from agents.jira_agent import jira_agent
 def decide_next_step(state):
     if state.get("is_clarified"):
         return "create_flowchart"
@@ -24,6 +24,7 @@ builder.add_node("analyze_response", analyzer_agent)
 builder.add_node("create_repo", github_agent)
 builder.add_node("create_flowchart", flowchart_agent)
 builder.add_node("final_notification", final_notification_agent)
+builder.add_node("jira_update", jira_agent)
 
 # Set entry point
 builder.set_entry_point("requirement_extraction")
@@ -59,7 +60,8 @@ builder.add_conditional_edges(
 # Sequential tasks
 builder.add_edge("create_flowchart", "create_repo")
 builder.add_edge("create_repo", "final_notification")
-builder.add_edge("final_notification", END)
+builder.add_edge("final_notification", "jira_update")
+builder.add_edge("jira_update", END)
 
 # Create a connection and checkpointer
 conn = sqlite3.connect("checkpoints.sqlite", check_same_thread=False)

@@ -1,7 +1,8 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from db.models.requirement_session import update_session
+from db.models.requirement_session import update_session,get_session
+from db.models.user_story import create_user_stories
 
 def final_notification_agent(state, config):
     stakeholder_emails = state["stakeholder_emails"]
@@ -64,6 +65,14 @@ def final_notification_agent(state, config):
             "status": status
         }
     )
+
+    sessionId = get_session(thread_id)
+    if sessionId:
+        if state["user_stories"]:
+            create_user_stories(
+                requirement_session_id=sessionId,
+                stories=state["user_stories"]
+            )
 
     return {
         "email_status": status

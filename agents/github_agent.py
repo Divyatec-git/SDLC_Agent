@@ -90,13 +90,9 @@ def github_agent(state, config):
                 flowchart_image_url=flowchart_image_url,
                 repo_url=repo_url
                 
-        )
+            )
 
-            if state["user_stories"]:
-                create_user_stories(
-                    requirement_session_id=sessionId,
-                    stories=state["user_stories"]
-                )
+            
 
         return {
             "repo_url": repo_url,

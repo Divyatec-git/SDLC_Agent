@@ -23,3 +23,7 @@ class SDLCState(TypedDict):
     flowchart_image_url: str
     thread_id: str
     user_stories: dict
+    jira_issue_keys: list
+    jira_url: str
+    jira_status: bool
+    
