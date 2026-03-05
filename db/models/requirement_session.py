@@ -130,7 +130,7 @@ def get_session_data_aggregated(session_id: str):
         },
         {
             "$project": {
-                "_id": 0,
+                "_id": 1,
                 "session_id": 1,
                 "raw_document": 1,
                 "extracted_requirements": 1,

@@ -10,6 +10,7 @@ Schema:
     "jira_issue_keys": list,
     "jira_url": str,
     "jira_status": bool,
+    "infographic_url": str,
     "created_at": datetime
 }
 """
@@ -26,7 +27,7 @@ def create_final_output(
     requirement_session_id: str,
     flowchart_image_url: str,
     repo_url: str,
-   
+   infographic_url: str
 ) -> None:
     """Insert a final output document for the given session."""
 
@@ -38,6 +39,7 @@ def create_final_output(
         "flowchart_image_url": flowchart_image_url,
         "repo_url": repo_url,
         "jira_status": False,
+        "infographic_url": infographic_url,
         "created_at": datetime.utcnow(),
     }
     _collection().insert_one(doc)
@@ -63,3 +65,14 @@ def update_final_output(requirement_session_id: str, jira_issue_keys: list, jira
         {"$set": {"jira_issue_keys": jira_issue_keys, "jira_url": jira_url, "jira_status": jira_status}}
     )
     
+def update_infographic_url(requirement_session_id: str, infographic_url: str) -> None:
+    """Update the final output document for a session."""
+
+    # Convert string → ObjectId
+    print("Updating infographic URL for session:", requirement_session_id, infographic_url)
+    requirement_session_obj_id = ObjectId(requirement_session_id)
+    _collection().update_one(
+        {"requirement_sessions_id": requirement_session_obj_id},
+        {"$set": {"infographic_url": infographic_url}}
+    )
+    print("Infographic URL updated successfully")

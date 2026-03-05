@@ -11,9 +11,11 @@ from agents.analyzer_agent import analyzer_agent
 from agents.flowchart_agent import flowchart_agent
 from agents.final_notification_agent import final_notification_agent
 from agents.jira_agent import jira_agent
+from agents.infographic_agent import generate_infographic
+
 def decide_next_step(state):
     if state.get("is_clarified"):
-        return "create_flowchart"
+        return "infographic"
     return "clarification"
 
 builder = StateGraph(SDLCState)
@@ -21,6 +23,7 @@ builder = StateGraph(SDLCState)
 builder.add_node("requirement_extraction", requirement_extraction_agent)
 builder.add_node("clarification", clarification_agent)
 builder.add_node("analyze_response", analyzer_agent)
+builder.add_node("infographic", generate_infographic)
 builder.add_node("create_repo", github_agent)
 builder.add_node("create_flowchart", flowchart_agent)
 builder.add_node("final_notification", final_notification_agent)
@@ -32,7 +35,7 @@ builder.set_entry_point("requirement_extraction")
 def check_if_questions(state):
     if state.get("clarification_questions"):
         return "clarification"
-    return "create_flowchart"
+    return "infographic"
 
 # Flow from extraction
 builder.add_conditional_edges(
@@ -40,7 +43,7 @@ builder.add_conditional_edges(
     check_if_questions,
     {
         "clarification": "clarification",
-        "create_flowchart": "create_flowchart"
+        "infographic": "infographic"
     }
 )
 
@@ -52,15 +55,17 @@ builder.add_conditional_edges(
     "analyze_response",
     decide_next_step,
     {
-        "create_flowchart": "create_flowchart",
+        "infographic": "infographic",
         "clarification": "clarification"
     }
 )
 
 # Sequential tasks
+builder.add_edge('infographic',"create_flowchart")
 builder.add_edge("create_flowchart", "create_repo")
 builder.add_edge("create_repo", "final_notification")
-builder.add_edge("final_notification", "jira_update")
+builder.add_edge('create_repo', 'jira_update')
+builder.add_edge("final_notification", END)
 builder.add_edge("jira_update", END)
 
 # Create a connection and checkpointer

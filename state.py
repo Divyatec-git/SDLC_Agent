@@ -26,4 +26,6 @@ class SDLCState(TypedDict):
     jira_issue_keys: list
     jira_url: str
     jira_status: bool
+    infographic_generated: bool
+    infographic_url: str
     

@@ -22,7 +22,7 @@ class RepoInfo(BaseModel):
 def github_agent(state, config):
     extracted_requirements = state["extracted_requirements"]
     thread_id = config.get("configurable", {}).get("thread_id", "default")
-    
+    sessionId = get_session(thread_id)
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     if not GITHUB_TOKEN:
         return {"email_status": "GitHub Token Missing - Repo not created"}
@@ -57,6 +57,35 @@ def github_agent(state, config):
         repo_url = response.json()["html_url"]
         repo_full_name = response.json()["full_name"]
         
+
+        image_path = f"generated_images/infographic_{sessionId}.png"
+
+        if os.path.exists(image_path):
+
+            with open(image_path, "rb") as img_file:
+                encoded_image = base64.b64encode(img_file.read()).decode()
+
+            image_payload = {
+                "message": "Add infographic image",
+                "content": encoded_image
+            }
+
+            image_url = f"https://api.github.com/repos/{repo_full_name}/contents/docs/infographic_{sessionId}.png"
+
+            image_response = requests.put(
+                image_url,
+                headers=headers,
+                json=image_payload
+            )
+
+            if image_response.status_code in [200, 201]:
+                github_image_path = f"docs/infographic_{sessionId}.png"
+
+
+        # ---------------------------
+        # Create README.md
+        # ---------------------------
+
         # Create README.md with Flowchart
         readme_url = f"https://api.github.com/repos/{repo_full_name}/contents/README.md"
         mermaid_diagram = state.get("mermaid_diagram", "")
@@ -82,13 +111,14 @@ def github_agent(state, config):
         }
         requests.put(readme_url, headers=headers, json=readme_payload)
 
-        sessionId = get_session(thread_id)
+       
         if sessionId:
             # Persist to MongoDB
             create_final_output(
                 requirement_session_id=sessionId,
                 flowchart_image_url=flowchart_image_url,
-                repo_url=repo_url
+                repo_url=repo_url,
+                infographic_url=state.get("infographic_url", "")
                 
             )
 
