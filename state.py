@@ -28,4 +28,4 @@ class SDLCState(TypedDict):
     jira_status: bool
     infographic_generated: bool
     infographic_url: str
-    
+    test_cases: List[dict]
