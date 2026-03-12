@@ -103,6 +103,7 @@ if view == "sessions":
                 # ----------------------------
                 final_output = session_data.get("final_output")
                 user_stories = session_data.get("user_stories", [])
+                testcases = session_data.get("testcases", [])
 
                 if final_output and final_output.get("repo_url"):
                     st.divider()
@@ -131,7 +132,18 @@ if view == "sessions":
                                     if story.get("dependencies"):
                                         st.write(f"**Dependencies:** {', '.join(story.get('dependencies'))}")
 
-            
+                if testcases:
+                    st.subheader("✅ Test Cases")
+                    for item in testcases:
+                        story_id = item.get("story_id")
+                        with st.expander(f"Story {story_id}"):
+                            st.write("Test Cases:")
+                            for tc in item.get("test_cases", []):
+                                with st.expander(f"TC: {tc.get('title', 'Test Case')}"):
+                                    st.write("**Steps:**")
+                                    for step in tc.get("steps", []):
+                                        st.write(f"- {step}")
+                                    st.write(f"**Expected Result:** {tc.get('expected_result', 'N/A')}")
 
     if st.button("Generate Code"):
         if not session_id:
